@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Name - Personal Profile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Canvas cho particle background */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Container chính */
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Music control */
+        .music-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .music-btn {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff);
+            background-size: 300% 300%;
+            animation: gradientShift 3s ease infinite;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .music-btn:hover {
+            transform: scale(1.1) rotateZ(10deg);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        }
+
+        .music-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Profile card */
+        .profile-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 
+                0 20px 60px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 400px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            animation: cardGlow 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes cardGlow {
+            0% {
+                box-shadow: 
+                    0 20px 60px rgba(0,0,0,0.3),
+                    0 0 30px rgba(255,255,255,0.1),
+                    inset 0 1px 0 rgba(255,255,255,0.2);
+            }
+            100% {
+                box-shadow: 
+                    0 25px 80px rgba(0,0,0,0.4),
+                    0 0 50px rgba(255,255,255,0.2),
+                    inset 0 1px 0 rgba(255,255,255,0.3);
+            }
+        }
+
+        /* Avatar */
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff);
+            background-size: 300% 300%;
+            animation: gradientShift 4s ease infinite;
+            padding: 4px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .avatar:hover {
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            transition: all 0.4s ease;
+        }
+
+        .avatar:hover img {
+            transform: rotate(-5deg);
+        }
+
+        /* Fallback avatar nếu không có ảnh */
+        .avatar-fallback {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Name */
+        .name {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .name::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff);
+            background-size: 300% 100%;
+            animation: gradientShift 2s ease infinite;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: translateX(-50%);
+        }
+
+        .name:hover::after {
+            width: 100%;
+        }
+
+        .name:hover {
+            transform: translateY(-2px);
+            text-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Description */
+        .description {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .description:hover {
+            color: rgba(255,255,255,1);
+            text-shadow: 0 2px 10px rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Social buttons */
+        .social-links {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .social-btn {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff);
+            background-size: 300% 300%;
+            animation: gradientShift 5s ease infinite;
+            border: none;
+            border-radius: 25px;
+            padding: 18px 30px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .social-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.6s ease;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+        }
+
+        .social-btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .social-btn .icon {
+            font-size: 1.3rem;
+        }
+
+        /* Gradient animation */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Ripple effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.6);
+            transform: scale(0);
+            animation: rippleAnimation 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes rippleAnimation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .profile-card {
+                padding: 30px 25px;
+                max-width: 350px;
+                margin: 0 15px;
+            }
+            
+            .name {
+                font-size: 2rem;
+            }
+            
+            .description {
+                font-size: 1rem;
+            }
+            
+            .social-btn {
+                padding: 16px 25px;
+                font-size: 1rem;
+            }
+            
+            .avatar {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .music-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+                top: 15px;
+                right: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .profile-card {
+                padding: 25px 20px;
+                max-width: 320px;
+            }
+            
+            .name {
+                font-size: 1.8rem;
+            }
+            
+            .avatar {
+                width: 90px;
+                height: 90px;
+            }
+        }
+
+        /* Loading animation */
+        .loading {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Pulse effect for music button */
+        .music-btn.playing {
+            animation: gradientShift 3s ease infinite, pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas for particle effects -->
+    <canvas id="particleCanvas"></canvas>
+    
+    <!-- Music control -->
+    <div class="music-control">
+        <button class="music-btn" id="musicBtn" title="Bật/Tắt nhạc">🎵</button>
+    </div>
+    
+    <!-- Audio element -->
+    <audio id="backgroundMusic" loop preload="auto">
+        <!-- Đặt file nhạc với tên: profile-music.mp3 hoặc profile-music.wav vào cùng folder với index.html -->
+        <source src="profile-music.mp3" type="audio/mpeg">
+        <source src="profile-music.wav" type="audio/wav">
+        <!-- Backup online nếu không có file local -->
+        <source src="https://www.soundjay.com/misc/sounds/magic-chime-02.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="container">
+        <div class="profile-card loading">
+            <!-- Avatar - Thay đổi src hoặc xóa img để hiện fallback -->
+            <div class="avatar">
+                <img src="FangYuan.png" alt="Avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="avatar-fallback" style="display: none;">YN</div>
+            </div>
+            
+            <!-- Tên - Có thể chỉnh sửa -->
+            <h1 class="name">@Tuaneditz69</h1>
+            
+            <!-- Mô tả - Có thể chỉnh sửa -->
+            <p class="description">
+                ✨ Tôi là content creator làm short video về meme, viết lách và tiểu <br>
+                 thuyết, thường chia sẻ trên Facebook, YouTube và TikTok.
+                
+            </p>
+            
+            <!-- Social links - Thay đổi href và text -->
+            <div class="social-links">
+                <a href="https://www.youtube.com/@Tuaneditz69" class="social-btn" target="_blank">
+                    <span class="icon">📺</span>
+                    <span>YouTube Channel</span>
+                </a>
+                
+                <a href="https://facebook.com/yourpage" class="social-btn" target="_blank">
+                    <span class="icon">👥</span>
+                    <span>Facebook Page</span>
+                </a>
+                
+                <a href="https://www.tiktok.com/@tuaneditz69" class="social-btn" target="_blank">
+                    <span class="icon">🎬</span>
+                    <span>TikTok Videos</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Particle system
+        class ParticleSystem {
+            constructor() {
+                this.canvas = document.getElementById('particleCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.mouse = { x: 0, y: 0 };
+                this.colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+                
+                this.resize();
+                this.init();
+                this.animate();
+                this.setupEventListeners();
+            }
+            
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+            
+            init() {
+                const particleCount = Math.min(80, Math.floor(this.canvas.width / 15));
+                for (let i = 0; i < particleCount; i++) {
+                    this.particles.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5 + 0.2,
+                        size: Math.random() * 3 + 1,
+                        color: this.colors[Math.floor(Math.random() * this.colors.length)],
+                        opacity: Math.random() * 0.8 + 0.2,
+                        pulse: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+            
+            animate() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.particles.forEach((particle, index) => {
+                    // Update position
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    particle.pulse += 0.02;
+                    
+                    // Wrap around screen
+                    if (particle.x < 0) particle.x = this.canvas.width;
+                    if (particle.x > this.canvas.width) particle.x = 0;
+                    if (particle.y < 0) particle.y = this.canvas.height;
+                    if (particle.y > this.canvas.height) particle.y = 0;
+                    
+                    // Calculate distance to mouse
+                    const dx = particle.x - this.mouse.x;
+                    const dy = particle.y - this.mouse.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Draw connection lines to nearby particles
+                    this.particles.forEach((otherParticle, otherIndex) => {
+                        if (index !== otherIndex) {
+                            const dx2 = particle.x - otherParticle.x;
+                            const dy2 = particle.y - otherParticle.y;
+                            const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                            
+                            if (distance2 < 100) {
+                                this.ctx.beginPath();
+                                this.ctx.moveTo(particle.x, particle.y);
+                                this.ctx.lineTo(otherParticle.x, otherParticle.y);
+                                this.ctx.strokeStyle = `rgba(255,255,255,${0.1 * (1 - distance2 / 100)})`;
+                                this.ctx.lineWidth = 0.5;
+                                this.ctx.stroke();
+                            }
+                        }
+                    });
+                    
+                    // Draw mouse connections
+                    if (distance < 150) {
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(particle.x, particle.y);
+                        this.ctx.lineTo(this.mouse.x, this.mouse.y);
+                        const gradient = this.ctx.createLinearGradient(particle.x, particle.y, this.mouse.x, this.mouse.y);
+                        gradient.addColorStop(0, particle.color + '80');
+                        gradient.addColorStop(1, '#ffffff00');
+                        this.ctx.strokeStyle = gradient;
+                        this.ctx.lineWidth = 2 * (1 - distance / 150);
+                        this.ctx.stroke();
+                    }
+                    
+                    // Draw particle with pulse effect
+                    const pulseSize = particle.size + Math.sin(particle.pulse) * 0.5;
+                    this.ctx.beginPath();
+                    this.ctx.arc(particle.x, particle.y, pulseSize, 0, Math.PI * 2);
+                    
+                    // Create radial gradient for glow effect
+                    const gradient = this.ctx.createRadialGradient(
+                        particle.x, particle.y, 0,
+                        particle.x, particle.y, pulseSize * 3
+                    );
+                    gradient.addColorStop(0, particle.color + 'ff');
+                    gradient.addColorStop(0.3, particle.color + '80');
+                    gradient.addColorStop(1, particle.color + '00');
+                    
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fill();
+                    
+                    // Inner bright core
+                    this.ctx.beginPath();
+                    this.ctx.arc(particle.x, particle.y, pulseSize * 0.3, 0, Math.PI * 2);
+                    this.ctx.fillStyle = '#ffffff' + Math.floor(particle.opacity * 255).toString(16).padStart(2, '0');
+                    this.ctx.fill();
+                });
+                
+                requestAnimationFrame(() => this.animate());
+            }
+            
+            setupEventListeners() {
+                window.addEventListener('resize', () => this.resize());
+                
+                document.addEventListener('mousemove', (e) => {
+                    this.mouse.x = e.clientX;
+                    this.mouse.y = e.clientY;
+                });
+                
+                document.addEventListener('touchmove', (e) => {
+                    if (e.touches.length > 0) {
+                        this.mouse.x = e.touches[0].clientX;
+                        this.mouse.y = e.touches[0].clientY;
+                    }
+                });
+            }
+        }
+        
+        // Music control
+        class MusicController {
+            constructor() {
+                this.audio = document.getElementById('backgroundMusic');
+                this.btn = document.getElementById('musicBtn');
+                this.isPlaying = false;
+                this.setupEventListeners();
+                
+                // Set initial state
+                this.audio.volume = 0.7; // Âm lượng 70%
+            }
+            
+            setupEventListeners() {
+                this.btn.addEventListener('click', () => this.toggle());
+                
+                this.audio.addEventListener('ended', () => {
+                    this.audio.currentTime = 0;
+                    this.audio.play();
+                });
+                
+                this.audio.addEventListener('error', (e) => {
+                    console.log('❌ Không thể load file nhạc:', e.target.src);
+                    console.log('📁 Hãy đảm bảo file "profile-music.mp3" hoặc "profile-music.wav" có trong folder!');
+                    this.btn.style.opacity = '0.7';
+                    this.btn.innerHTML = '🔇';
+                    this.btn.title = 'Không tìm thấy file nhạc';
+                });
+            }
+            
+            toggle() {
+                if (this.isPlaying) {
+                    this.pause();
+                } else {
+                    this.play();
+                }
+            }
+            
+            play() {
+                this.audio.play().then(() => {
+                    this.isPlaying = true;
+                    this.btn.innerHTML = '⏸️';
+                    this.btn.classList.add('playing');
+                    this.btn.title = 'Tạm dừng nhạc';
+                }).catch(() => {
+                    console.log('Không thể phát nhạc. Trình duyệt có thể đang chặn autoplay.');
+                });
+            }
+            
+            pause() {
+                this.audio.pause();
+                this.isPlaying = false;
+                this.btn.innerHTML = '🎵';
+                this.btn.classList.remove('playing');
+                this.btn.title = 'Phát nhạc';
+            }
+        }
+        
+        // Ripple effect for buttons
+        function createRipple(e) {
+            const button = e.currentTarget;
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            
+            button.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        }
+        
+        // Auto-play music function
+        function attemptAutoPlay() {
+            const audio = document.getElementById('backgroundMusic');
+            const musicBtn = document.getElementById('musicBtn');
+            
+            // Thử phát nhạc tự động
+            audio.play().then(() => {
+                console.log('🎵 Nhạc đã tự động phát!');
+                musicBtn.innerHTML = '⏸️';
+                musicBtn.classList.add('playing');
+                musicBtn.title = 'Tạm dừng nhạc';
+            }).catch(() => {
+                console.log('⚠️ Trình duyệt chặn autoplay. User cần click để phát nhạc.');
+                // Thêm listener để phát nhạc khi user tương tác lần đầu
+                const enableAudio = () => {
+                    audio.play().then(() => {
+                        musicBtn.innerHTML = '⏸️';
+                        musicBtn.classList.add('playing');
+                        musicBtn.title = 'Tạm dừng nhạc';
+                        console.log('🎵 Nhạc đã được kích hoạt sau tương tác!');
+                    });
+                    document.removeEventListener('click', enableAudio);
+                    document.removeEventListener('touchstart', enableAudio);
+                };
+                document.addEventListener('click', enableAudio, { once: true });
+                document.addEventListener('touchstart', enableAudio, { once: true });
+            });
+        }
+
+        // Initialize everything when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize particle system
+            new ParticleSystem();
+            
+            // Initialize music controller
+            new MusicController();
+            
+            // Thử phát nhạc tự động sau 1 giây
+            setTimeout(attemptAutoPlay, 1000);
+            
+            // Add ripple effects to all buttons
+            document.querySelectorAll('.social-btn, .music-btn').forEach(btn => {
+                btn.addEventListener('click', createRipple);
+            });
+            
+            // Animate profile card entrance
+            setTimeout(() => {
+                document.querySelector('.profile-card').style.animationDelay = '0.2s';
+            }, 100);
+            
+            // Add some interactive hover effects
+            const avatar = document.querySelector('.avatar');
+            avatar.addEventListener('mouseenter', () => {
+                avatar.style.filter = 'brightness(1.1) saturate(1.2)';
+            });
+            
+            avatar.addEventListener('mouseleave', () => {
+                avatar.style.filter = 'brightness(1) saturate(1)';
+            });
+            
+            // Name typing effect (optional)
+            const nameElement = document.querySelector('.name');
+            const originalText = nameElement.textContent;
+            let isTyping = false;
+            
+            nameElement.addEventListener('click', () => {
+                if (isTyping) return;
+                
+                isTyping = true;
+                nameElement.textContent = '';
+                
+                let i = 0;
+                const typeInterval = setInterval(() => {
+                    nameElement.textContent += originalText[i];
+                    i++;
+                    
+                    if (i >= originalText.length) {
+                        clearInterval(typeInterval);
+                        isTyping = false;
+                    }
+                }, 100);
+            });
+            
+            console.log('🎨 Personal Profile Website đã được khởi tạo!');
+            console.log('📝 Để chỉnh sửa:');
+            console.log('   - Thay đổi avatar: Sửa src của thẻ img trong .avatar');
+            console.log('   - Thay đổi tên: Sửa nội dung thẻ .name');
+            console.log('   - Thay đổi mô tả: Sửa nội dung thẻ .description'); 
+            console.log('   - Thay đổi links: Sửa href của các thẻ .social-btn');
+            console.log('🎵 Để thêm nhạc nền:');
+            console.log('   - Đặt file nhạc tên: "profile-music.mp3" hoặc "profile-music.wav"');
+            console.log('   - Vào cùng folder với file index.html');
+            console.log('   - Website sẽ tự động phát nhạc!');
+        });
+    </script>
+</body>
+</html>
